@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MindMirror — Cognitive Insight Engine</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg1:#f4f7ff;
+  --bg2:#eef2ff;
+  --card:#ffffffcc;
+  --border:#d6ddff;
+  --text:#1e293b;
+  --muted:#64748b;
+  --accent:#6366f1;
+  --accent2:#06b6d4;
+  --good:#10b981;
+  --warn:#f59e0b;
+  --bad:#ef4444;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;font-family:Inter;}
+
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 20% 20%, #c7d2fe 0%, transparent 40%),
+    radial-gradient(circle at 80% 20%, #a5f3fc 0%, transparent 40%),
+    radial-gradient(circle at 50% 100%, #ddd6fe 0%, transparent 45%),
+    var(--bg1);
+  color:var(--text);
+  padding:40px 20px;
+}
+
+.container{
+  max-width:900px;
+  margin:auto;
+}
+
+.header{
+  text-align:center;
+  margin-bottom:24px;
+}
+
+h1{
+  font-size:42px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.subtitle{
+  color:var(--muted);
+  margin-top:6px;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid var(--border);
+  backdrop-filter: blur(10px);
+  border-radius:16px;
+  padding:18px;
+  margin-top:16px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.05);
+}
+
+textarea{
+  width:100%;
+  min-height:140px;
+  padding:14px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:white;
+  color:var(--text);
+  resize:none;
+  outline:none;
+}
+
+button{
+  margin-top:12px;
+  padding:12px 16px;
+  border:none;
+  border-radius:10px;
+  background:linear-gradient(90deg,var(--accent),var(--accent2));
+  color:white;
+  font-weight:600;
+  cursor:pointer;
+}
+
+button:hover{transform:translateY(-1px);}
+
+.item{
+  padding:12px;
+  border-radius:12px;
+  background:#f8fafc;
+  border:1px solid #e2e8f0;
+  margin-top:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <div class="header">
+    <h1>MindMirror</h1>
+    <div class="subtitle">Relationship-aware cognitive insight engine</div>
+  </div>
+
+  <div class="card">
+    <textarea id="text" placeholder="Type something like: I feel like I'm not enough for my partner..."></textarea>
+    <button onclick="analyze()">Analyze Thought Patterns</button>
+  </div>
+
+  <div id="output"></div>
+
+</div>
+
+<script>
+
+/* =========================
+   RELATIONSHIP THEMES
+========================= */
+
+const THEMES = {
+  relationships:{
+    keywords:["partner","love","relationship","dating","romantic"],
+    insight:"This reflects relational attachment processing."
+  },
+  selfWorth:{
+    keywords:["not enough","worthless","failure","inadequate","unworthy","i'm not enough"],
+    insight:"This reflects self-worth being tied to perceived acceptance."
+  },
+  attachment:{
+    keywords:["leave","abandon","losing","they'll go","they will leave"],
+    insight:"This reflects attachment anxiety and fear of loss."
+  }
+};
+
+/* =========================
+   RELATIONSHIP DISTORTIONS (FIXED + RELIABLE)
+========================= */
+
+const DISTORTIONS = {
+  catastrophizing:{
+    label:"Catastrophizing",
+    explain:"Turning emotional uncertainty into worst-case relationship outcomes.",
+    triggers:["always going to end","will end badly","everything will fall apart","it's going to end","worst case"],
+    examples:["This will fall apart.","It will end badly.","Everything will collapse."]
+  },
+
+  emotionalReasoning:{
+    label:"Emotional Reasoning",
+    explain:"Assuming feelings are factual evidence.",
+    triggers:["i feel like i'm not enough","i feel like","i feel unworthy","i feel like they"],
+    examples:["I feel unworthy so I must be.","It feels true so it must be."]
+  },
+
+  rejectionSensitivity:{
+    label:"Rejection Sensitivity",
+    explain:"Interpreting ambiguity as rejection.",
+    triggers:["didn't reply","not replying","taking long","annoyed with me","don't like me"],
+    examples:["They didn’t reply so they’re upset.","They are pulling away."]
+  },
+
+  selfWorthLinking:{
+    label:"Self-Worth Linking",
+    explain:"Tying identity value to relationship acceptance.",
+    triggers:["i'm not enough","not enough for","worth staying","worth it","i am not enough"],
+    examples:["If they leave, I’m not enough.","My worth depends on them."]
+  },
+
+  attachmentAnxiety:{
+    label:"Attachment Anxiety",
+    explain:"Fear of abandonment shaping interpretation.",
+    triggers:["they will leave","i'm going to lose","they'll leave me","abandon me"],
+    examples:["They will leave me.","I will lose them eventually."]
+  },
+
+  mindReading:{
+    label:"Mind Reading",
+    explain:"Assuming others’ thoughts without evidence.",
+    triggers:["they think i'm","they must think","they probably think","don't like me"],
+    examples:["They think I’m not good enough.","They don’t like me."]
+  }
+};
+
+/* =========================
+   DETECTION ENGINE (FIXED)
+========================= */
+
+function detect(text){
+  const t = text.toLowerCase();
+  const found=[];
+
+  for(const d of Object.values(DISTORTIONS)){
+    const hit = d.triggers.some(trig => t.includes(trig));
+    if(hit) found.push(d);
+  }
+
+  return found;
+}
+
+function detectThemes(text){
+  const t=text.toLowerCase();
+  return Object.values(THEMES).filter(th=>th.keywords.some(k=>t.includes(k)));
+}
+
+/* =========================
+   INSIGHT ENGINE (IMPROVED)
+========================= */
+
+function insight(text, dist, themes){
+
+  const themeText = themes.length
+    ? themes.map(t=>t.insight).join(" ")
+    : "This reflects general cognitive processing.";
+
+  const distText = dist.length
+    ? "The thought shows distortion patterns affecting interpretation of relationships and self-worth."
+    : "No strong distortions detected.";
+
+  return `
+${themeText}
+
+${distText}
+
+The mind often converts emotional uncertainty into narrative certainty — especially in relationships.
+
+These are interpretation patterns, not objective truths.
+  `.trim();
+}
+
+/* =========================
+   MAIN
+========================= */
+
+function analyze(){
+
+  const text=document.getElementById("text").value;
+  const out=document.getElementById("output");
+
+  const dist=detect(text);
+  const themes=detectThemes(text);
+
+  const result=insight(text,dist,themes);
+
+  out.innerHTML=`
+    <div class="card">
+      <h2>Psychological Insight</h2>
+      <p style="color:var(--muted);white-space:pre-line">${result}</p>
+    </div>
+
+    <div class="card">
+      <h3>Detected Cognitive Patterns</h3>
+      ${dist.length
+        ? dist.map(d=>`
+          <div class="item">
+            <b>${d.label}</b><br/>
+            <span style="color:var(--muted)">${d.explain}</span>
+          </div>
+        `).join("")
+        : "<p style='color:var(--muted)'>No distortions detected.</p>"
+      }
+    </div>
+
+    <div class="card">
+      <h3>Reframed Perspectives</h3>
+      ${dist.map(d=>`
+        <div class="item">
+          <b>${d.label}</b><br/>
+          <span style="color:var(--good)">
+            ${d.examples[Math.floor(Math.random()*d.examples.length)]}
+          </span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+</script>
+
+</body>
+</html>
