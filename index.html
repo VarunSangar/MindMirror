@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindMirror — Cognitive Pattern Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f;
+    --bg2: #111118;
+    --bg3: #1a1a24;
+    --bg4: #22223a;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.12);
+    --text: #e8e8f0;
+    --text2: #9090b0;
+    --text3: #5a5a80;
+    --blue: #4f8ef7;
+    --purple: #8b5cf6;
+    --cyan: #22d3ee;
+    --pink: #ec4899;
+    --green: #10b981;
+    --amber: #f59e0b;
+    --red: #ef4444;
+    --grad1: linear-gradient(135deg, #4f8ef7, #8b5cf6);
+    --glass: rgba(255,255,255,0.03);
+    --glass2: rgba(255,255,255,0.06);
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  .header {
+    position: relative;
+    padding: 2.5rem 2rem 2rem;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% -20%, rgba(139,92,246,0.15), transparent);
+    pointer-events: none;
+  }
+  .header-eyebrow { font-size: 11px; font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; color: var(--cyan); margin-bottom: 0.75rem; }
+  .header-logo { font-size: clamp(2rem, 5vw, 3rem); font-weight: 700; background: linear-gradient(135deg, #4f8ef7, #8b5cf6, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -0.02em; margin-bottom: 0.5rem; }
+  .header-tagline { font-size: 15px; color: var(--text2); font-weight: 400; }
+  .header-badge { display: inline-flex; align-items: center; gap: 6px; margin-top: 1rem; padding: 4px 12px; border-radius: 100px; border: 1px solid rgba(139,92,246,0.3); background: rgba(139,92,246,0.08); font-size: 11px; color: var(--purple); font-weight: 500; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .main { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem 4rem; }
+  .section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text3); margin-bottom: 0.75rem; }
+  .card { background: var(--glass); border: 1px solid var(--border); border-radius: 16px; padding: 1.5rem; backdrop-filter: blur(8px); }
+  .card:hover { border-color: var(--border2); }
+  .input-section { margin-bottom: 1.5rem; }
+  .textarea-wrapper { position: relative; }
+  #userInput { width: 100%; min-height: 160px; background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; padding: 1.25rem; color: var(--text); font-family: 'Inter', sans-serif; font-size: 15px; line-height: 1.7; resize: vertical; transition: border-color 0.2s, box-shadow 0.2s; outline: none; }
+  #userInput:focus { border-color: rgba(79,142,247,0.5); box-shadow: 0 0 0 3px rgba(79,142,247,0.08); }
+  #userInput::placeholder { color: var(--text3); }
+  .char-count { position: absolute; bottom: 10px; right: 14px; font-size: 11px; color: var(--text3); pointer-events: none; }
+  .controls { display: flex; align-items: center; gap: 12px; margin-top: 1rem; flex-wrap: wrap; }
+  .btn-analyze { display: flex; align-items: center; gap: 8px; padding: 10px 24px; background: var(--grad1); border: none; border-radius: 10px; color: #fff; font-family: 'Inter', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity 0.2s, transform 0.15s; }
+  .btn-analyze:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-analyze:active { transform: scale(0.98); }
+  .btn-analyze:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .btn-secondary { display: flex; align-items: center; gap: 6px; padding: 10px 16px; background: var(--glass2); border: 1px solid var(--border2); border-radius: 10px; color: var(--text2); font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+  .btn-secondary:hover { background: var(--bg3); color: var(--text); border-color: rgba(255,255,255,0.2); }
+  .toggle-wrap { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--border2); background: var(--glass); cursor: pointer; font-size: 13px; color: var(--text2); transition: all 0.2s; user-select: none; }
+  .toggle-wrap:hover { color: var(--text); }
+  .toggle { width: 32px; height: 18px; background: var(--bg4); border-radius: 100px; position: relative; transition: background 0.2s; }
+  .toggle.on { background: var(--purple); }
+  .toggle::after { content: ''; position: absolute; width: 12px; height: 12px; background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: transform 0.2s; }
+  .toggle.on::after { transform: translateX(14px); }
+  #analysisProgress { display: none; margin-top: 1rem; }
+  .progress-bar-wrap { height: 3px; background: var(--bg3); border-radius: 100px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--grad1); border-radius: 100px; width: 0%; transition: width 0.3s ease; }
+  .progress-label { font-size: 12px; color: var(--text3); margin-bottom: 6px; }
+  #highlightedText { display: none; background: var(--bg2); border: 1px solid var(--border2); border-radius: 12px; padding: 1.25rem; font-size: 15px; line-height: 1.85; margin-top: 1.5rem; white-space: pre-wrap; word-break: break-word; }
+  .highlight { border-radius: 4px; padding: 1px 3px; cursor: pointer; position: relative; font-weight: 500; transition: filter 0.15s; }
+  .highlight:hover { filter: brightness(1.2); }
+  .hl-catastrophizing { background: rgba(239,68,68,0.25); border-bottom: 2px solid var(--red); color: #fca5a5; }
+  .hl-overgeneralization { background: rgba(245,158,11,0.2); border-bottom: 2px solid var(--amber); color: #fcd34d; }
+  .hl-blackwhite { background: rgba(139,92,246,0.2); border-bottom: 2px solid var(--purple); color: #c4b5fd; }
+  .hl-emotional { background: rgba(236,72,153,0.2); border-bottom: 2px solid var(--pink); color: #f9a8d4; }
+  .hl-personalization { background: rgba(34,211,238,0.15); border-bottom: 2px solid var(--cyan); color: #67e8f9; }
+  .hl-absolutist { background: rgba(16,185,129,0.15); border-bottom: 2px solid var(--green); color: #6ee7b7; }
+  .tooltip { position: fixed; background: var(--bg3); border: 1px solid var(--border2); border-radius: 10px; padding: 10px 14px; font-size: 12px; max-width: 240px; z-index: 1000; pointer-events: none; opacity: 0; transition: opacity 0.15s; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+  .tooltip.show { opacity: 1; }
+  .tooltip-type { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px; }
+  .tooltip-text { color: var(--text2); line-height: 1.5; }
+  #resultsSection { display: none; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+  .metric-card { background: var(--glass); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.25rem; transition: border-color 0.2s, transform 0.2s; }
+  .metric-card:hover { border-color: var(--border2); transform: translateY(-2px); }
+  .metric-label { font-size: 11px; font-weight: 500; letter-spacing: 0.05em; color: var(--text3); margin-bottom: 0.5rem; text-transform: uppercase; }
+  .metric-value { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1; margin-bottom: 0.4rem; }
+  .metric-bar-wrap { height: 4px; background: var(--bg3); border-radius: 100px; overflow: hidden; margin-top: 8px; }
+  .metric-bar { height: 100%; border-radius: 100px; width: 0; transition: width 1s cubic-bezier(0.4,0,0.2,1); }
+  .distortion-item { display: flex; align-items: flex-start; gap: 12px; padding: 1rem; border-radius: 10px; background: var(--glass); border: 1px solid var(--border); margin-bottom: 10px; transition: border-color 0.2s; }
+  .distortion-item:hover { border-color: var(--border2); }
+  .distortion-icon { width: 36px; height: 36px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+  .distortion-info { flex: 1; }
+  .distortion-name { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+  .distortion-desc { font-size: 12px; color: var(--text2); line-height: 1.5; }
+  .distortion-score { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .score-badge { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 100px; background: var(--bg3); border: 1px solid var(--border2); }
+  .conf-bar-wrap { width: 60px; height: 4px; background: var(--bg3); border-radius: 100px; overflow: hidden; }
+  .conf-bar { height: 100%; border-radius: 100px; transition: width 1s ease; }
+  .chart-wrap { position: relative; width: 100%; height: 260px; }
+  .chart-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 1rem; }
+  .reframe-item { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin-bottom: 1rem; }
+  .reframe-header { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: var(--glass2); font-size: 12px; font-weight: 600; border-bottom: 1px solid var(--border); }
+  .reframe-body { padding: 14px; display: grid; gap: 10px; }
+  .reframe-col { display: grid; gap: 6px; }
+  .reframe-sublabel { font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); }
+  .reframe-text { font-size: 13px; line-height: 1.6; }
+  .reframe-original { color: var(--text2); }
+  .reframe-improved { color: var(--text); }
+  .reduction-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 100px; background: rgba(16,185,129,0.12); color: var(--green); border: 1px solid rgba(16,185,129,0.25); }
+  .comparison-wrap { display: grid; grid-template-columns: 1fr auto 1fr; gap: 1rem; align-items: start; }
+  @media (max-width: 700px) { .comparison-wrap { grid-template-columns: 1fr; } .comparison-divider { display: none; } }
+  .comparison-col { display: grid; gap: 10px; }
+  .comparison-header { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 8px; }
+  .comparison-text { font-size: 14px; line-height: 1.7; padding: 1rem; border-radius: 10px; border: 1px solid var(--border); background: var(--glass); min-height: 80px; }
+  .comparison-divider { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding-top: 30px; }
+  .arrow-icon { font-size: 24px; color: var(--purple); }
+  .improvement-score { text-align: center; font-size: 22px; font-weight: 700; color: var(--green); background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 10px; padding: 8px 16px; margin-top: 1rem; }
+  .improvement-label { font-size: 11px; color: var(--text3); font-weight: 400; display: block; }
+  .insight-card { background: linear-gradient(135deg, rgba(79,142,247,0.06), rgba(139,92,246,0.08)); border: 1px solid rgba(139,92,246,0.2); border-radius: 14px; padding: 1.5rem; position: relative; overflow: hidden; }
+  .insight-card::before { content: '"'; position: absolute; top: -10px; left: 16px; font-size: 80px; color: rgba(139,92,246,0.15); font-family: Georgia, serif; line-height: 1; pointer-events: none; }
+  .insight-text { font-size: 15px; line-height: 1.75; color: var(--text); position: relative; z-index: 1; }
+  .insight-label { font-size: 10px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--purple); margin-bottom: 0.75rem; }
+  #heatmapSection { display: none; }
+  .heatmap-wrap { display: flex; flex-wrap: wrap; gap: 3px; line-height: 1.8; font-size: 15px; }
+  .hm-word { border-radius: 3px; padding: 1px 3px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1rem; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-in { animation: fadeSlideIn 0.4s ease forwards; }
+  .animate-in-delay-1 { animation-delay: 0.1s; opacity: 0; }
+  .animate-in-delay-2 { animation-delay: 0.2s; opacity: 0; }
+  .animate-in-delay-3 { animation-delay: 0.3s; opacity: 0; }
+  .animate-in-delay-4 { animation-delay: 0.4s; opacity: 0; }
+  .animate-in-delay-5 { animation-delay: 0.5s; opacity: 0; }
+  @keyframes shimmer { 0% { background-position: -200% center; } 100% { background-position: 200% center; } }
+  .analyzing-text { background: linear-gradient(90deg, var(--text2) 0%, var(--cyan) 40%, var(--text2) 80%); background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; animation: shimmer 2s linear infinite; font-size: 12px; font-weight: 500; }
+  .section { margin-bottom: 2rem; }
+  .section-heading { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 8px; }
+  .section-heading-icon { width: 28px; height: 28px; border-radius: 8px; background: var(--glass2); border: 1px solid var(--border2); display: flex; align-items: center; justify-content: center; font-size: 14px; }
+  .samples { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 1rem; }
+  .sample-btn { padding: 5px 12px; border-radius: 100px; border: 1px solid var(--border2); background: var(--glass); color: var(--text2); font-size: 12px; cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; }
+  .sample-btn:hover { border-color: rgba(79,142,247,0.5); color: var(--blue); background: rgba(79,142,247,0.06); }
+  .tab-bar { display: flex; gap: 4px; background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 1.5rem; }
+  .tab { flex: 1; padding: 8px 12px; border-radius: 9px; border: none; background: transparent; color: var(--text2); font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--bg3); color: var(--text); border: 1px solid var(--border2); }
+  .heatmap-legend { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text3); margin-top: 10px; }
+  .hm-scale { display: flex; gap: 3px; }
+  .hm-cell { width: 16px; height: 16px; border-radius: 3px; }
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 100px; }
+  @keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="header-eyebrow">Cognitive Analysis Tool</div>
+  <div class="header-logo">MindMirror</div>
+  <div class="header-tagline">Making cognitive patterns visible through language.</div>
+  <div class="header-badge">
+    <span class="dot"></span>
+    Educational &amp; Informational — Not a clinical diagnostic tool
+  </div>
+</header>
+
+<main class="main">
+  <div class="section input-section">
+    <div class="section-label">Your Text</div>
+    <div class="samples">
+      <button class="sample-btn" onclick="loadSample(0)">📌 Try: Catastrophizing</button>
+      <button class="sample-btn" onclick="loadSample(1)">📌 Try: Overgeneralization</button>
+      <button class="sample-btn" onclick="loadSample(2)">📌 Try: Black &amp; White</button>
+      <button class="sample-btn" onclick="loadSample(3)">📌 Mixed distortions</button>
+    </div>
+    <div class="textarea-wrapper">
+      <textarea id="userInput" placeholder="Write or paste your thoughts here... e.g. 'I always mess everything up. Nobody ever understands me. This is absolutely the worst day of my life.'" oninput="onInputChange()"></textarea>
+      <span class="char-count" id="charCount">0</span>
+    </div>
+    <div id="analysisProgress">
+      <div class="progress-label"><span class="analyzing-text" id="progressLabel">Scanning for patterns...</span></div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressFill"></div></div>
+    </div>
+    <div class="controls">
+      <button class="btn-analyze" id="analyzeBtn" onclick="runAnalysis()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Analyze Text
+      </button>
+      <div class="toggle-wrap" onclick="toggleRealtime()">
+        <div class="toggle" id="realtimeToggleEl"></div>
+        <span>Real-time mode</span>
+      </div>
+      <button class="btn-secondary" onclick="clearAll()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        Clear
+      </button>
+      <button class="btn-secondary" id="exportBtn" onclick="exportReport()" style="display:none">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export Report
+      </button>
+    </div>
+  </div>
+
+  <div id="highlightedText" class="animate-in"></div>
+
+  <div id="heatmapSection" class="section animate-in" style="margin-top:1.5rem">
+    <div class="section-heading">
+      <div class="section-heading-icon">🌡️</div>
+      Emotional Intensity Heatmap
+    </div>
+    <div class="card">
+      <div class="heatmap-wrap" id="heatmapWords"></div>
+      <div class="heatmap-legend">
+        <span>Intensity:</span>
+        <div class="hm-scale">
+          <div class="hm-cell" style="background:rgba(79,142,247,0.1)"></div>
+          <div class="hm-cell" style="background:rgba(139,92,246,0.25)"></div>
+          <div class="hm-cell" style="background:rgba(236,72,153,0.35)"></div>
+          <div class="hm-cell" style="background:rgba(239,68,68,0.45)"></div>
+          <div class="hm-cell" style="background:rgba(239,68,68,0.65)"></div>
+        </div>
+        <span>Low → High</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="resultsSection">
+    <div class="section animate-in animate-in-delay-1">
+      <div class="section-heading">
+        <div class="section-heading-icon">📊</div>
+        Language Metrics
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px" id="metricsGrid"></div>
+    </div>
+
+    <div class="section animate-in animate-in-delay-2">
+      <div class="section-heading">
+        <div class="section-heading-icon">🔍</div>
+        Detected Cognitive Distortions
+      </div>
+      <div id="distortionsList"></div>
+      <div class="legend" id="distortionLegend"></div>
+    </div>
+
+    <div class="grid-2 section animate-in animate-in-delay-3">
+      <div class="card">
+        <div class="chart-title">Thinking Profile</div>
+        <div class="chart-wrap"><canvas id="radarChart" role="img" aria-label="Radar chart showing thinking profile across 5 dimensions"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="chart-title">Distortion Distribution</div>
+        <div class="chart-wrap"><canvas id="barChart" role="img" aria-label="Bar chart showing detected cognitive distortions and their confidence levels"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section animate-in animate-in-delay-4">
+      <div class="tab-bar">
+        <button class="tab active" onclick="switchTab('reframes', this)">💬 Cognitive Reframes</button>
+        <button class="tab" onclick="switchTab('comparison', this)">↔ Before / After</button>
+        <button class="tab" onclick="switchTab('insight', this)">✨ Insight Summary</button>
+      </div>
+
+      <div id="tab-reframes">
+        <div class="section-heading">
+          <div class="section-heading-icon">✍️</div>
+          Healthier Alternatives
+        </div>
+        <div id="reframesList"></div>
+      </div>
+
+      <div id="tab-comparison" style="display:none">
+        <div class="comparison-wrap">
+          <div class="comparison-col">
+            <div class="comparison-header" style="color:var(--red)">⚠ Original</div>
+            <div class="comparison-text" id="compOriginal"></div>
+          </div>
+          <div class="comparison-divider">
+            <div class="arrow-icon">→</div>
+          </div>
+          <div class="comparison-col">
+            <div class="comparison-header" style="color:var(--green)">✓ Reframed</div>
+            <div class="comparison-text" id="compReframed"></div>
+          </div>
+        </div>
+        <div class="improvement-score" id="improvementScore">
+          <span class="improvement-label">Overall Improvement</span>—
+        </div>
+      </div>
+
+      <div id="tab-insight" style="display:none">
+        <div class="insight-card">
+          <div class="insight-label">✦ AI Insight Summary</div>
+          <div class="insight-text" id="insightText"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<div class="tooltip" id="tooltip">
+  <div class="tooltip-type" id="tooltipType"></div>
+  <div class="tooltip-text" id="tooltipText"></div>
+</div>
+
+<script>
+const DISTORTION_CONFIG = {
+  catastrophizing: {
+    label: 'Catastrophizing', color: '#ef4444', bg: 'rgba(239,68,68,0.25)', icon: '💥', hlClass: 'hl-catastrophizing',
+    patterns: [/\b(worst|terrible|horrible|disaster|catastrophe|ruined|destroyed|awful|dreadful|unbearable|devastating|nightmare|hopeless|doomed|never recover|completely ruined|total failure)\b/gi, /\b(will never|can't survive|impossible to|nothing will|everything is over|my life is over)\b/gi],
+    keywords: ['worst','terrible','horrible','disaster','catastrophe','ruined','destroyed','awful','dreadful','unbearable','devastating','nightmare','hopeless','doomed']
+  },
+  overgeneralization: {
+    label: 'Overgeneralization', color: '#f59e0b', bg: 'rgba(245,158,11,0.2)', icon: '🌐', hlClass: 'hl-overgeneralization',
+    patterns: [/\b(always|never|every time|every single|nothing ever|no one ever|everyone always|all people|nobody|no one|not once|not ever|constantly|perpetually)\b/gi],
+    keywords: ['always','never','every time','every single','nothing ever','no one ever','everyone always','nobody','no one','constantly','perpetually']
+  },
+  blackwhite: {
+    label: 'Black-and-White Thinking', color: '#8b5cf6', bg: 'rgba(139,92,246,0.2)', icon: '⬛', hlClass: 'hl-blackwhite',
+    patterns: [/\b(either|completely|totally|entirely|perfect|perfectly|total|absolute|must be|has to be|can only be|all or nothing)\b/gi, /\b(success or failure|win or lose|good or bad|right or wrong|perfect or worthless)\b/gi],
+    keywords: ['either','completely','totally','entirely','perfect','perfectly','total','absolute','all or nothing']
+  },
+  emotional: {
+    label: 'Emotional Reasoning', color: '#ec4899', bg: 'rgba(236,72,153,0.2)', icon: '💔', hlClass: 'hl-emotional',
+    patterns: [/\b(i feel like|i feel that|i feel so|feels like|i sense|i know it's|it must mean|therefore it is|so it must)\b/gi, /\b(i'm worthless|i'm a failure|i'm stupid|i'm ugly|i'm pathetic|i'm useless|i'm terrible)\b/gi],
+    keywords: ["feel like","feel that","feel so","feels like","i'm worthless","i'm a failure","i'm stupid","i'm pathetic","i'm useless"]
+  },
+  personalization: {
+    label: 'Personalization', color: '#22d3ee', bg: 'rgba(34,211,238,0.15)', icon: '🎯', hlClass: 'hl-personalization',
+    patterns: [/\b(my fault|it's my fault|because of me|i caused|i made this happen|i ruined|i'm to blame|blame myself|all my fault|entirely my fault)\b/gi, /\b(if only i|i should have|i could have stopped|it's because i)\b/gi],
+    keywords: ['my fault',"it's my fault",'because of me','i caused','i made this happen','i ruined',"i'm to blame",'blame myself','all my fault','if only i','i should have']
+  },
+  absolutist: {
+    label: 'Absolutist Language', color: '#10b981', bg: 'rgba(16,185,129,0.15)', icon: '🔒', hlClass: 'hl-absolutist',
+    patterns: [/\b(must|have to|need to|should|ought to|have no choice|forced to|required to|has to|absolutely must|definitely have)\b/gi],
+    keywords: ['must','have to','need to','should','ought to','have no choice','forced to','required to','absolutely must']
+  }
+};
+
+const EMOTIONAL_WORDS = {
+  high: ['hate','despise','horrible','terrible','awful','disgusting','furious','devastated','miserable','worthless','failure','stupid','pathetic','useless','hopeless','doomed','ruined','destroyed','catastrophe','nightmare'],
+  medium: ['angry','sad','frustrated','upset','worried','anxious','scared','hurt','disappointed','annoyed','confused','lost','overwhelmed','stressed','exhausted'],
+  low: ['bad','wrong','difficult','hard','tough','challenging','uncomfortable','unsure','uncertain','nervous','concerned']
+};
+
+const REFRAME_MAP = {
+  catastrophizing: () => `While this situation feels overwhelming right now, it is one challenge among many I've faced and navigated before.`,
+  overgeneralization: () => `This has happened sometimes, but that doesn't mean it will always be this way — patterns can and do change.`,
+  blackwhite: () => `There's likely a range of outcomes between the extremes. Many situations involve nuance and middle ground.`,
+  emotional: () => `My feelings about this are valid, but feelings don't always reflect facts. The situation may look different with more information.`,
+  personalization: () => `Multiple factors influence outcomes. While I play a role, I'm not solely responsible for everything that happens.`,
+  absolutist: () => `I have more flexibility than I might think. I can explore what I'd like to do rather than what I must do.`
+};
+
+const SAMPLES = [
+  "This is absolutely the worst day of my life. Everything always goes wrong for me. I completely ruined the presentation and now my career is totally destroyed. I'm a complete failure.",
+  "Nobody ever listens to me. I always say the wrong thing. Every single time I try to connect with people they reject me. I'll never be able to make real friends.",
+  "Either I get this promotion or I'm a complete failure. There's no middle ground — you either succeed totally or you fail completely. I have to be perfect or it means I'm worthless.",
+  "I feel like a burden to everyone. It's all my fault that my family is stressed. I should have done everything differently. I'm worthless and terrible and I've ruined everything for everyone around me."
+];
+
+let realtimeMode = false;
+let realtimeTimer = null;
+let charts = {};
+let analysisResult = null;
+
+function onInputChange() {
+  const txt = document.getElementById('userInput').value;
+  document.getElementById('charCount').textContent = txt.length;
+  if (realtimeMode && txt.length > 20) {
+    clearTimeout(realtimeTimer);
+    realtimeTimer = setTimeout(() => runAnalysis(true), 700);
+  }
+}
+
+function toggleRealtime() {
+  realtimeMode = !realtimeMode;
+  document.getElementById('realtimeToggleEl').classList.toggle('on', realtimeMode);
+}
+
+function loadSample(i) {
+  document.getElementById('userInput').value = SAMPLES[i];
+  onInputChange();
+}
+
+function clearAll() {
+  document.getElementById('userInput').value = '';
+  document.getElementById('charCount').textContent = '0';
+  document.getElementById('resultsSection').style.display = 'none';
+  document.getElementById('highlightedText').style.display = 'none';
+  document.getElementById('heatmapSection').style.display = 'none';
+  document.getElementById('exportBtn').style.display = 'none';
+  analysisResult = null;
+}
+
+function switchTab(name, btn) {
+  ['reframes','comparison','insight'].forEach(t => {
+    document.getElementById('tab-'+t).style.display = t === name ? '' : 'none';
+  });
+  document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+function analyzeText(text) {
+  const lowerText = text.toLowerCase();
+  const wordList = lowerText.split(/\s+/);
+  const totalWords = wordList.length;
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  const detected = [];
+
+  for (const [key, config] of Object.entries(DISTORTION_CONFIG)) {
+    let matchCount = 0;
+    let matchedSpans = [];
+    for (const pattern of config.patterns) {
+      const p = new RegExp(pattern.source, pattern.flags);
+      let match;
+      while ((match = p.exec(text)) !== null) {
+        matchCount++;
+        matchedSpans.push({ start: match.index, end: match.index + match[0].length, text: match[0] });
+      }
+    }
+    if (matchCount > 0) {
+      const confidence = Math.min(95, 40 + matchCount * 18 + Math.random() * 10);
+      detected.push({ type: key, config, confidence: Math.round(confidence), matchCount, spans: matchedSpans });
+    }
+  }
+
+  let negativityCount = 0, absolutistCount = 0, iCount = 0, otherPronounCount = 0, emotionalIntensity = 0;
+  const negativeWords = new Set([...EMOTIONAL_WORDS.high, ...EMOTIONAL_WORDS.medium, ...EMOTIONAL_WORDS.low]);
+  const absolutistWords = DISTORTION_CONFIG.absolutist.keywords;
+
+  wordList.forEach(w => {
+    const clean = w.replace(/[^a-z]/g, '');
+    if (negativeWords.has(clean)) negativityCount++;
+    if (absolutistWords.some(a => a.split(' ')[0] === clean)) absolutistCount++;
+    if (clean === 'i') iCount++;
+    if (['you','he','she','they','we','them','him','her'].includes(clean)) otherPronounCount++;
+    if (EMOTIONAL_WORDS.high.includes(clean)) emotionalIntensity += 1.0;
+    else if (EMOTIONAL_WORDS.medium.includes(clean)) emotionalIntensity += 0.6;
+    else if (EMOTIONAL_WORDS.low.includes(clean)) emotionalIntensity += 0.3;
+  });
+
+  const negativityScore = Math.min(100, Math.round((negativityCount / Math.max(totalWords, 1)) * 300));
+  const certaintyScore = Math.min(100, Math.round((absolutistCount / Math.max(totalWords, 1)) * 400));
+  const intensityScore = Math.min(100, Math.round((emotionalIntensity / Math.max(totalWords, 1)) * 250));
+  const pronounRatio = Math.round((iCount / (iCount + otherPronounCount + 0.1)) * 100);
+  const catastrophizingScore = detected.find(d => d.type === 'catastrophizing')?.confidence || Math.floor(Math.random()*25);
+
+  const wordIntensities = wordList.map(w => {
+    const clean = w.replace(/[^a-z]/g, '');
+    if (EMOTIONAL_WORDS.high.includes(clean)) return 0.9;
+    if (EMOTIONAL_WORDS.medium.includes(clean)) return 0.55;
+    if (EMOTIONAL_WORDS.low.includes(clean)) return 0.25;
+    if (absolutistWords.some(a => a.split(' ')[0] === clean)) return 0.7;
+    return 0.0;
+  });
+
+  const reframes = [];
+  detected.forEach(d => {
+    let origSentence = '';
+    for (const s of sentences) {
+      if (d.spans.some(sp => s.toLowerCase().includes(sp.text.toLowerCase()))) { origSentence = s.trim(); break; }
+    }
+    if (!origSentence && sentences[0]) origSentence = sentences[0].trim();
+    const reframeText = REFRAME_MAP[d.type](origSentence);
+    const reduction = Math.min(95, Math.round(d.confidence * 0.7 + 15));
+    reframes.push({ type: d.type, config: d.config, original: origSentence, reframe: reframeText, reduction });
+  });
+
+  const reframedText = reframes.length > 0 ? reframes.map(r => r.reframe).join(' ') : "With a clearer perspective, I can see this situation as a challenge I can grow from.";
+  const overallScore = Math.min(98, Math.round(detected.reduce((s,d) => s+d.confidence,0)/Math.max(detected.length,1)*0.6 + detected.length*8));
+  const improvementScore = Math.max(20, 100 - overallScore + 15);
+  const insight = generateInsight(detected, negativityScore, certaintyScore, intensityScore);
+
+  return {
+    text, detected, wordList, wordIntensities,
+    metrics: { negativityScore, certaintyScore, intensityScore, absolutistCount, pronounRatio },
+    radarData: { catastrophizing: catastrophizingScore, emotionalIntensity: intensityScore, certainty: certaintyScore, negativity: negativityScore, selfFocus: Math.min(100, pronounRatio + 10) },
+    reframes, reframedText, improvementScore, insight
+  };
+}
+
+function generateInsight(detected, neg, cert, intensity) {
+  if (detected.length === 0) return "Your text shows a relatively balanced cognitive pattern. The language you've used reflects a grounded perspective, with limited signs of distorted thinking. This doesn't mean everything is easy — it means you're processing your experience in a measured, realistic way. Keep noticing how you frame your thoughts.";
+  const names = detected.map(d => d.config.label);
+  const dominant = detected.reduce((a, b) => a.confidence > b.confidence ? a : b);
+  const intensity_desc = intensity > 60 ? 'high' : intensity > 30 ? 'moderate' : 'low';
+  const patterns = names.length === 1 ? `a strong pattern of ${names[0]}` : `a combination of ${names.slice(0,-1).join(', ')} and ${names[names.length-1]}`;
+  return `Your writing reveals ${patterns}. The dominant pattern is ${dominant.config.label}, which appears at ${dominant.confidence}% confidence. Emotional intensity registers as ${intensity_desc}, and the certainty language in your text suggests a tendency toward absolute conclusions. Cognitive distortions like these are extremely common — they're mental shortcuts that can feel protective but often amplify distress. The reframes below aren't about dismissing your feelings, but about gently expanding the range of possibilities your mind considers. Even small shifts in language — from "always" to "sometimes," or from "I ruined this" to "this didn't go as planned" — can meaningfully change how you experience a situation.`;
+}
+
+async function runAnalysis(silent = false) {
+  const text = document.getElementById('userInput').value.trim();
+  if (!text || text.length < 5) return;
+  const btn = document.getElementById('analyzeBtn');
+  btn.disabled = true;
+  btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> Analyzing...`;
+  if (!silent) {
+    document.getElementById('analysisProgress').style.display = 'block';
+    await animateProgress(['Tokenizing text...','Detecting patterns...','Computing metrics...','Generating reframes...','Building profile...']);
+  }
+  await new Promise(r => setTimeout(r, silent ? 0 : 200));
+  analysisResult = analyzeText(text);
+  renderResults(analysisResult);
+  btn.disabled = false;
+  btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg> Analyze Text`;
+  document.getElementById('analysisProgress').style.display = 'none';
+  document.getElementById('exportBtn').style.display = '';
+  if (!silent) setTimeout(() => document.getElementById('highlightedText').scrollIntoView({behavior:'smooth',block:'nearest'}), 100);
+}
+
+async function animateProgress(steps) {
+  const fill = document.getElementById('progressFill');
+  const label = document.getElementById('progressLabel');
+  for (let i = 0; i < steps.length; i++) {
+    label.textContent = steps[i];
+    fill.style.width = ((i+1)/steps.length*100)+'%';
+    await new Promise(r => setTimeout(r, 300));
+  }
+}
+
+function renderResults(r) {
+  renderHighlights(r); renderHeatmap(r); renderMetrics(r);
+  renderDistortions(r); renderCharts(r); renderReframes(r);
+  renderComparison(r); renderInsight(r);
+  document.getElementById('resultsSection').style.display = '';
+  document.getElementById('highlightedText').style.display = '';
+  document.getElementById('heatmapSection').style.display = '';
+}
+
+function renderHighlights(r) {
+  const container = document.getElementById('highlightedText');
+  let html = r.text;
+  const allSpans = [];
+  r.detected.forEach(d => d.spans.forEach(span => allSpans.push({ ...span, type: d.type, config: d.config, confidence: d.confidence })));
+  allSpans.sort((a,b) => b.start - a.start);
+  const seen = new Set();
+  const deduped = [];
+  for (const span of allSpans) {
+    const key = `${span.start}-${span.end}`;
+    if (!seen.has(key)) { seen.add(key); deduped.push(span); }
+  }
+  for (const span of deduped) {
+    const before = html.slice(0, span.start);
+    const match = html.slice(span.start, span.end);
+    const after = html.slice(span.end);
+    html = before + `<span class="highlight ${span.config.hlClass}" data-type="${span.type}" data-label="${span.config.label}" data-conf="${span.confidence}" onmouseenter="showTooltip(event,this)" onmouseleave="hideTooltip()">${match}</span>` + after;
+  }
+  container.innerHTML = html;
+}
+
+function renderHeatmap(r) {
+  const container = document.getElementById('heatmapWords');
+  const chunks = r.text.split(/(\s+)/);
+  let wordIdx = 0;
+  let parts = [];
+  for (const chunk of chunks) {
+    if (/^\s+$/.test(chunk)) { parts.push(chunk); continue; }
+    const intensity = r.wordIntensities[wordIdx++] || 0;
+    let bg = '';
+    if (intensity > 0.75) bg = `rgba(239,68,68,${intensity})`;
+    else if (intensity > 0.5) bg = `rgba(236,72,153,${intensity})`;
+    else if (intensity > 0.2) bg = `rgba(139,92,246,${intensity})`;
+    else if (intensity > 0.05) bg = `rgba(79,142,247,${intensity})`;
+    parts.push(`<span class="hm-word" style="${bg ? 'background:'+bg+';border-radius:3px;padding:1px 2px;' : ''}">${escapeHtml(chunk)}</span>`);
+  }
+  container.innerHTML = parts.join('');
+}
+
+function renderMetrics(r) {
+  const m = r.metrics;
+  const metrics = [
+    { label: 'Negativity Score', value: m.negativityScore, color: '#ef4444', max: 100 },
+    { label: 'Certainty Level', value: m.certaintyScore, color: '#f59e0b', max: 100 },
+    { label: 'Emotional Intensity', value: m.intensityScore, color: '#ec4899', max: 100 },
+    { label: 'Absolutist Words', value: m.absolutistCount, color: '#8b5cf6', max: 20 },
+    { label: 'Self-Focus (I ratio)', value: m.pronounRatio, unit: '%', color: '#22d3ee', max: 100 },
+    { label: 'Distortions Found', value: r.detected.length, color: '#10b981', max: 6 }
+  ];
+  const grid = document.getElementById('metricsGrid');
+  grid.innerHTML = metrics.map((m,i) => `
+    <div class="metric-card">
+      <div class="metric-label">${m.label}</div>
+      <div class="metric-value" style="color:${m.color}">${m.value}${m.unit||''}</div>
+      <div class="metric-bar-wrap"><div class="metric-bar" id="mbar-${i}" style="background:${m.color}" data-pct="${Math.min(100,Math.round(m.value/m.max*100))}"></div></div>
+    </div>`).join('');
+  setTimeout(() => metrics.forEach((_,i) => { const el = document.getElementById('mbar-'+i); if(el) el.style.width = el.dataset.pct+'%'; }), 50);
+}
+
+function renderDistortions(r) {
+  const container = document.getElementById('distortionsList');
+  if (r.detected.length === 0) {
+    container.innerHTML = `<div class="card" style="text-align:center;padding:2rem;color:var(--text2)"><div style="font-size:2rem;margin-bottom:0.5rem">✅</div><div style="font-weight:600;color:var(--text)">No significant distortions detected</div><div style="font-size:13px;margin-top:4px">Your text shows relatively balanced cognitive patterns.</div></div>`;
+    return;
+  }
+  const expl = { catastrophizing:'Predicting extremely negative outcomes or treating situations as far worse than they are', overgeneralization:'Drawing broad conclusions from single events using words like "always" or "never"', blackwhite:'Seeing situations in extremes with no middle ground', emotional:'Using feelings as evidence of facts ("I feel it, therefore it must be true")', personalization:"Blaming oneself for events outside of one's control", absolutist:'Using rigid "must/should" language that leaves no room for flexibility' };
+  container.innerHTML = r.detected.sort((a,b) => b.confidence - a.confidence).map(d => `
+    <div class="distortion-item">
+      <div class="distortion-icon" style="background:${d.config.bg};border:1px solid ${d.config.color}33">${d.config.icon}</div>
+      <div class="distortion-info">
+        <div class="distortion-name" style="color:${d.config.color}">${d.config.label}</div>
+        <div class="distortion-desc">${expl[d.type]} — found ${d.matchCount} instance${d.matchCount>1?'s':''}</div>
+      </div>
+      <div class="distortion-score">
+        <div><div class="score-badge" style="color:${d.config.color}">${d.confidence}%</div><div style="font-size:10px;color:var(--text3);text-align:center;margin-top:3px">confidence</div></div>
+        <div><div class="conf-bar-wrap"><div class="conf-bar" style="width:${d.confidence}%;background:${d.config.color}"></div></div></div>
+      </div>
+    </div>`).join('');
+  document.getElementById('distortionLegend').innerHTML = r.detected.map(d => `<div class="legend-item"><div class="legend-dot" style="background:${d.config.color}"></div><span>${d.config.label}</span></div>`).join('');
+}
+
+function renderCharts(r) {
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+  const gridColor = 'rgba(255,255,255,0.06)';
+  const textColor = '#9090b0';
+  charts.radar = new Chart(document.getElementById('radarChart').getContext('2d'), {
+    type: 'radar',
+    data: {
+      labels: ['Catastrophizing','Emotional\nIntensity','Certainty','Negativity','Self-Focus'],
+      datasets: [{ label: 'Your Pattern', data: [r.radarData.catastrophizing, r.radarData.emotionalIntensity, r.radarData.certainty, r.radarData.negativity, r.radarData.selfFocus], borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.15)', borderWidth: 2, pointBackgroundColor: '#8b5cf6', pointRadius: 4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { r: { min: 0, max: 100, grid: { color: gridColor }, angleLines: { color: gridColor }, ticks: { color: textColor, font: { size: 10 }, backdropColor: 'transparent', stepSize: 25 }, pointLabels: { color: textColor, font: { size: 11 } } } } }
+  });
+  charts.bar = new Chart(document.getElementById('barChart').getContext('2d'), {
+    type: 'bar',
+    data: {
+      labels: r.detected.length > 0 ? r.detected.map(d => d.config.label) : ['No distortions'],
+      datasets: [{ data: r.detected.length > 0 ? r.detected.map(d => d.confidence) : [0], backgroundColor: r.detected.length > 0 ? r.detected.map(d => d.config.color+'99') : ['rgba(144,144,176,0.3)'], borderColor: r.detected.length > 0 ? r.detected.map(d => d.config.color) : ['rgba(144,144,176,0.5)'], borderWidth: 1.5, borderRadius: 6 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100, grid: { color: gridColor }, ticks: { color: textColor, font: { size: 10 }, callback: v => v+'%' } }, x: { grid: { display: false }, ticks: { color: textColor, font: { size: 10 }, maxRotation: 30 } } } }
+  });
+}
+
+function renderReframes(r) {
+  const container = document.getElementById('reframesList');
+  if (r.reframes.length === 0) { container.innerHTML = `<div style="color:var(--text2);font-size:14px;padding:1rem 0">No reframes needed — your language looks balanced.</div>`; return; }
+  container.innerHTML = r.reframes.map(rf => `
+    <div class="reframe-item">
+      <div class="reframe-header" style="color:${rf.config.color}"><span>${rf.config.icon}</span><span>${rf.config.label}</span><div style="margin-left:auto"><span class="reduction-badge">↑ ${rf.reduction}% reduction</span></div></div>
+      <div class="reframe-body">
+        <div class="reframe-col"><div class="reframe-sublabel">Original thinking</div><div class="reframe-text reframe-original">"${escapeHtml(rf.original)}"</div></div>
+        <div style="height:1px;background:var(--border)"></div>
+        <div class="reframe-col"><div class="reframe-sublabel">Reframed perspective</div><div class="reframe-text reframe-improved">"${escapeHtml(rf.reframe)}"</div></div>
+      </div>
+    </div>`).join('');
+}
+
+function renderComparison(r) {
+  document.getElementById('compOriginal').textContent = r.text;
+  document.getElementById('compReframed').textContent = r.reframedText;
+  document.getElementById('improvementScore').innerHTML = `<span class="improvement-label">Estimated Cognitive Improvement</span><span style="font-size:2rem;font-weight:700;color:var(--green)">+${r.improvementScore}%</span>`;
+}
+
+function renderInsight(r) {
+  const el = document.getElementById('insightText');
+  el.textContent = '';
+  const text = r.insight;
+  let i = 0;
+  const interval = setInterval(() => { if (i < text.length) { el.textContent += text[i++]; } else { clearInterval(interval); } }, 12);
+}
+
+function showTooltip(event, el) {
+  const tooltip = document.getElementById('tooltip');
+  const type = el.dataset.type;
+  const expl = { catastrophizing:'Predicting extremely negative outcomes or treating situations as far worse than they are', overgeneralization:'Drawing broad conclusions from single events using "always" or "never"', blackwhite:'Seeing situations in extremes with no middle ground', emotional:'Using feelings as evidence of facts', personalization:"Blaming oneself for events outside of one's control", absolutist:'Using rigid "must/should" language' };
+  document.getElementById('tooltipType').textContent = el.dataset.label;
+  document.getElementById('tooltipType').style.color = DISTORTION_CONFIG[type]?.color || 'var(--text2)';
+  document.getElementById('tooltipText').textContent = `${expl[type]} (${el.dataset.conf}% confidence)`;
+  tooltip.style.left = (event.clientX + 12) + 'px';
+  tooltip.style.top = (event.clientY - 40) + 'px';
+  tooltip.classList.add('show');
+}
+
+function hideTooltip() { document.getElementById('tooltip').classList.remove('show'); }
+
+function exportReport() {
+  if (!analysisResult) return;
+  const r = analysisResult;
+  const lines = ['MINDMIRROR — COGNITIVE ANALYSIS REPORT','========================================',`Date: ${new Date().toLocaleDateString()}`,'','ORIGINAL TEXT:',r.text,'','METRICS:',`  Negativity Score: ${r.metrics.negativityScore}/100`,`  Certainty Level: ${r.metrics.certaintyScore}/100`,`  Emotional Intensity: ${r.metrics.intensityScore}/100`,`  Absolutist Words: ${r.metrics.absolutistCount}`,`  Self-Focus (I ratio): ${r.metrics.pronounRatio}%`,'','DETECTED DISTORTIONS:',...r.detected.map(d => `  • ${d.config.label} — ${d.confidence}% confidence`),'','COGNITIVE REFRAMES:',...r.reframes.map(rf => [`  [${rf.config.label}]`,`  Original: "${rf.original}"`,`  Reframe:  "${rf.reframe}"`,`  Reduction: ${rf.reduction}%`,'']).flat(),'INSIGHT:',r.insight,'','--- Educational tool only. Not a clinical diagnostic. ---'];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'mindmirror-report.txt';
+  a.click();
+}
+
+function escapeHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>
